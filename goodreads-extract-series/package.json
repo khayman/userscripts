@@ -1,0 +1,16 @@
+{
+  "name": "goodreads-extract-series",
+  "version": "0.2.3",
+  "private": true,
+  "description": "Tampermonkey/Violentmonkey userscript that extracts an Author - Series NN - Title list from Goodreads series pages.",
+  "scripts": {
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "trim:mocks": "bun run scripts/trim-mocks.js",
+    "golden:update": "bun run scripts/gen-golden.js"
+  },
+  "devDependencies": {
+    "bun-types": "^1.3.14",
+    "happy-dom": "^15.0.0"
+  }
+}
