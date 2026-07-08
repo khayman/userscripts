@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.2.3
+// @version      0.2.4
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khay
 // @match        https://www.goodreads.com/series/*
@@ -71,14 +71,19 @@
         if (id) seen.add(id);
         var author = book.author && book.author.name ? book.author.name : '';
         var titleRaw = book.title || '';
-        var m = titleRaw.match(NUMBER_RE);
-        // Fall back to the positionally-aligned seriesHeaders entry
-        // (e.g. "Book 10.1") when the title itself has no "#N.N" token.
+        // Prefer the positionally-aligned seriesHeaders entry (e.g.
+        // "Book 7") as the source of the *current* series number. A title
+        // like "Admiral's Oath (Dakotan Confederacy #1) (Castle Federation,
+        // #7)" carries a foreign series' "#1" which would otherwise
+        // shadow the real number. Fall back to the title's "#N)" token
+        // only when the header is missing or doesn't parse.
+        var m = null;
+        var header = headers[i];
+        if (typeof header === 'string') {
+          m = header.match(HEADER_RE);
+        }
         if (!m) {
-          var header = headers[i];
-          if (typeof header === 'string') {
-            m = header.match(HEADER_RE);
-          }
+          m = titleRaw.match(NUMBER_RE);
         }
         if (!m) return;
         var bookTitle = book.bookTitleBare || titleRaw.replace(PAREN_RE, '').trim();

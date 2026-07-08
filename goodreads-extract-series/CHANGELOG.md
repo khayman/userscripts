@@ -2,6 +2,11 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.2.3] - 2026-07-08
+
+### Fixed
+- Spinoffs interleaved into a series' reading order were getting numbered by the *foreign* series' `#N` from the title, not the current series' number. So "Admiral's Oath (Dakotan Confederacy #1) (Castle Federation, #7)" came out as `#1` instead of `#7`, and "To Stand Defiant (Dakotan Confederacy, #2)" as `#2` instead of `#8` (duplicate numbers, missing slots.) The parser now treats the positionally-aligned `seriesHeaders[i]` entry ("Book 7") as the primary source for the number, only falling back to the title's `#N)` when the header is missing or doesn't parse. The header always carries the current series' own number; a title's `#N` can't be trusted to.
+
 ## [0.2.2] - 2026-07-05
 
 ### Fixed
