@@ -54,6 +54,8 @@ function docFromHtmlString(html) {
 
 const PROMOTED = new Set([
   'series.html',
+  'series-with-anthologies-and-various-artists.html',
+  'series-with-a-short-story-collection.html',
   'series-with-omnibus-at-the-bottom.html',
   'series-with-seemingly-tricky-numbering.html',
   'series-with-spinoffs-as-part-of-the-reading-order.html',
@@ -97,6 +99,75 @@ describe('series.html (baseline)', () => {
 // `bun run golden:update <file>`, then promoted from describe.skip to a
 // full describe with targeted regression assertions.
 //
+describe('series-with-anthologies-and-various-artists.html', () => {
+  const file = 'series-with-anthologies-and-various-artists.html';
+  let doc;
+  beforeAll(() => { doc = loadMockDoc(file); });
+
+  test('collectBookEntries returns all 55 primary works in sequence', () => {
+    const entries = script.collectBookEntries(doc);
+    expect(entries).toHaveLength(55);
+    expect(entries.map((e) => Number(e.seriesNumber))).toEqual(
+      Array.from({ length: 55 }, (_, i) => i + 1)
+    );
+  });
+
+  test('each volume retains its editor as the author', () => {
+    const entries = script.collectBookEntries(doc);
+    const authorByNumber = new Map(entries.map((e) => [e.seriesNumber, e.author]));
+
+    expect(authorByNumber.get('1')).toBe('Damon Knight');
+    expect(authorByNumber.get('2')).toBe('Brian W. Aldiss');
+    expect(authorByNumber.get('55')).toBe('Catherynne M. Valente');
+  });
+
+  test('buildList matches golden', () => {
+    expect(script.buildList(doc)).toBe(loadGolden(file));
+  });
+
+  test('buildFilename uses Various Authors', () => {
+    expect(script.buildFilename(doc)).toBe('Various Authors - Nebula Awards Showcases.txt');
+  });
+});
+
+describe('series-with-a-short-story-collection.html', () => {
+  const file = 'series-with-a-short-story-collection.html';
+  let doc;
+  beforeAll(() => { doc = loadMockDoc(file); });
+
+  test('collectBookEntries returns 29 numbered entries', () => {
+    expect(script.collectBookEntries(doc)).toHaveLength(29);
+  });
+
+  test('short works retain their fractional series numbers', () => {
+    const entries = script.collectBookEntries(doc);
+    const numberByTitle = new Map(entries.map((e) => [e.title, e.seriesNumber]));
+
+    expect(numberByTitle.get('Tooth and Claw')).toBe('0.5');
+    expect(numberByTitle.get('Divorce Horse')).toBe('7.1');
+    expect(numberByTitle.get('Christmas in Absaroka County')).toBe('8.1');
+    expect(numberByTitle.get('Messenger')).toBe('8.2');
+    expect(numberByTitle.get('Spirit of Steamboat')).toBe('9.1');
+    expect(numberByTitle.get('Wait for Signs: Twelve Longmire Stories')).toBe('10.1');
+    expect(numberByTitle.get('The Highwayman')).toBe('11.5');
+  });
+
+  test('lines are sorted ascending by series number', () => {
+    const list = script.buildList(doc);
+    const numbers = parseSeriesNumbers(list);
+    const sorted = [...numbers].sort((a, b) => a - b);
+    expect(numbers).toEqual(sorted);
+  });
+
+  test('buildList matches golden', () => {
+    expect(script.buildList(doc)).toBe(loadGolden(file));
+  });
+
+  test('buildFilename is "Craig Johnson - Walt Longmire.txt"', () => {
+    expect(script.buildFilename(doc)).toBe('Craig Johnson - Walt Longmire.txt');
+  });
+});
+
 // Omnibus mock: the omnibus "(Easy Rawlins Mysteries, #1-5)" at the bottom
 // must NOT appear as a primary work (must not be misnumbered #1).
 describe('series-with-omnibus-at-the-bottom.html', () => {
@@ -207,11 +278,8 @@ describe('series-with-seemingly-tricky-numbering.html', () => {
   });
 });
 
-// --- Still-skipped mocks (not yet hand-verified) -----------------------------
-// Remaining mocks stay skipped until hand-verified per TODO.md "Pending — bug
-// hunt". The omnibus and spinoffs mocks are now explicit describes above, so
-// the auto-loop picks up any other committed skeletons. (mockFiles is already
-// filtered of the promoted ones at the top of this file.)
+// Any future skeletons are discovered automatically but stay skipped until
+// their output has been hand-verified and promoted to an explicit describe.
 for (const file of mockFiles) {
   describe.skip(file, () => {
     test('buildList matches golden (placeholder)', () => {
