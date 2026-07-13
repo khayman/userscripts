@@ -1,11 +1,11 @@
-// Generates golden files under test/expected/<name>.txt from buildList()
-// output against the committed skeletons in test/series*.html.
+// Generates golden files under test/fixtures/expected/<name>.txt from
+// buildList() output against the committed skeleton fixtures.
 //
 // Run: bun run golden:update
 //
-// With no arguments only the baseline (series.html) is generated. Pass an
+// With no arguments only the baseline (leonid-mcgill.html) is generated. Pass an
 // explicit list of names to regenerate promoted or pending fixtures, e.g.
-//   bun run scripts/gen-golden.js series.html series-with-omnibus-at-the-bottom.html
+//   bun run scripts/gen-golden.js leonid-mcgill.html easy-rawlins.html
 // or `bun run scripts/gen-golden.js --all` to regenerate every skeleton.
 
 const fs = require('fs');
@@ -14,8 +14,9 @@ const { createRequire } = require('module');
 const { Window } = require('happy-dom');
 
 const ROOT = path.resolve(__dirname, '..');
-const MOCK_DIR = path.join(ROOT, 'test');
-const OUT_DIR = path.join(ROOT, 'test', 'expected');
+const FIXTURE_DIR = path.join(ROOT, 'test', 'fixtures');
+const MOCK_DIR = path.join(FIXTURE_DIR, 'skeletons');
+const OUT_DIR = path.join(FIXTURE_DIR, 'expected');
 
 // Use createRequire so the userscript's CommonJS `module.exports` handshake
 // works under bun's ESM entry point.
@@ -31,7 +32,7 @@ function parseDoc(html) {
 function allMocks() {
   return fs
     .readdirSync(MOCK_DIR)
-    .filter((f) => /^series.*\.html$/.test(f))
+    .filter((f) => /\.html$/.test(f))
     .sort();
 }
 
@@ -48,13 +49,13 @@ function genOne(file) {
   const outName = file.replace(/\.html$/, '.txt');
   const dst = path.join(OUT_DIR, outName);
   fs.writeFileSync(dst, list + '\n', 'utf8');
-  console.log(file + ' -> test/expected/' + outName + ' (' + list.split('\n').length + ' lines)');
+  console.log(file + ' -> test/fixtures/expected/' + outName + ' (' + list.split('\n').length + ' lines)');
   return true;
 }
 
 const argv = process.argv.slice(2);
 const files =
-  argv.length === 0 ? ['series.html']
+  argv.length === 0 ? ['leonid-mcgill.html']
   : argv[0] === '--all' ? allMocks()
   : argv;
 

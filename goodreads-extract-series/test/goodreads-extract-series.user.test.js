@@ -1,9 +1,9 @@
 // Test harness: builds a real DOM from each skeleton HTML mock (happy-dom)
 // and verifies buildList() / collectBookEntries() / buildFilename() output.
 //
-// The baseline and hand-verified bug-hunt fixtures are actively asserted.
-// Other committed skeletons are discovered and describe.skip()'d below until
-// each has been hand-verified against the real Goodreads page (see TODO.md).
+// Hand-verified fixtures are actively asserted. Other committed skeletons are
+// discovered and describe.skip()'d below until each has been checked against
+// the real Goodreads page.
 //
 // Run: bun test   (or `bun run test:watch`)
 
@@ -20,8 +20,9 @@ const script = requireUser(
   path.resolve(import.meta.dirname, '..', 'goodreads-extract-series.user.js')
 );
 
-const MOCK_DIR = import.meta.dirname;
-const EXPECTED_DIR = path.join(MOCK_DIR, 'expected');
+const FIXTURE_DIR = path.join(import.meta.dirname, 'fixtures');
+const MOCK_DIR = path.join(FIXTURE_DIR, 'skeletons');
+const EXPECTED_DIR = path.join(FIXTURE_DIR, 'expected');
 
 function docFromHtml(html) {
   const win = new Window();
@@ -53,20 +54,20 @@ function docFromHtmlString(html) {
 }
 
 const PROMOTED = new Set([
-  'series.html',
-  'series-with-anthologies-and-various-artists.html',
-  'series-with-a-short-story-collection.html',
-  'series-with-omnibus-at-the-bottom.html',
-  'series-with-seemingly-tricky-numbering.html',
-  'series-with-spinoffs-as-part-of-the-reading-order.html',
+  'castle-federation.html',
+  'easy-rawlins.html',
+  'leonid-mcgill.html',
+  'lucas-davenport.html',
+  'nebula-awards-showcases.html',
+  'walt-longmire.html',
 ]);
 const mockFiles = fs
   .readdirSync(MOCK_DIR)
-  .filter((f) => /^series.*\.html$/.test(f) && !PROMOTED.has(f))
+  .filter((f) => /\.html$/.test(f) && !PROMOTED.has(f))
   .sort();
 
-describe('series.html (baseline)', () => {
-  const file = 'series.html';
+describe('leonid-mcgill.html (baseline)', () => {
+  const file = 'leonid-mcgill.html';
   let doc;
   beforeAll(() => { doc = loadMockDoc(file); });
 
@@ -85,7 +86,7 @@ describe('series.html (baseline)', () => {
     expect(numbers).toEqual(sorted);
   });
 
-  test('buildList matches test/expected/series.txt', () => {
+  test('buildList matches golden', () => {
     expect(script.buildList(doc)).toBe(loadGolden(file));
   });
 
@@ -94,13 +95,12 @@ describe('series.html (baseline)', () => {
   });
 });
 
-// --- Bug-hunt: promoted mocks (hand-verified against the real page) ---------
-// Each was hand-verified, script fixed where needed, golden generated via
-// `bun run golden:update <file>`, then promoted from describe.skip to a
-// full describe with targeted regression assertions.
+// --- Promoted mocks (hand-verified against the real page) -------------------
+// Each was checked, fixed where needed, given a targeted regression suite and
+// golden, then added to PROMOTED so auto-discovery no longer skips it.
 //
-describe('series-with-anthologies-and-various-artists.html', () => {
-  const file = 'series-with-anthologies-and-various-artists.html';
+describe('nebula-awards-showcases.html', () => {
+  const file = 'nebula-awards-showcases.html';
   let doc;
   beforeAll(() => { doc = loadMockDoc(file); });
 
@@ -130,8 +130,8 @@ describe('series-with-anthologies-and-various-artists.html', () => {
   });
 });
 
-describe('series-with-a-short-story-collection.html', () => {
-  const file = 'series-with-a-short-story-collection.html';
+describe('walt-longmire.html', () => {
+  const file = 'walt-longmire.html';
   let doc;
   beforeAll(() => { doc = loadMockDoc(file); });
 
@@ -170,8 +170,8 @@ describe('series-with-a-short-story-collection.html', () => {
 
 // Omnibus mock: the omnibus "(Easy Rawlins Mysteries, #1-5)" at the bottom
 // must NOT appear as a primary work (must not be misnumbered #1).
-describe('series-with-omnibus-at-the-bottom.html', () => {
-  const file = 'series-with-omnibus-at-the-bottom.html';
+describe('easy-rawlins.html', () => {
+  const file = 'easy-rawlins.html';
   let doc;
   beforeAll(() => { doc = loadMockDoc(file); });
 
@@ -209,8 +209,8 @@ describe('series-with-omnibus-at-the-bottom.html', () => {
 // carry the foreign series' "#N" (e.g. "(Dakotan Confederacy #1)"), which
 // used to shadow the current series' number from seriesHeaders. The fix
 // prefers the aligned header ("Book 7/8/9") as the source of the number.
-describe('series-with-spinoffs-as-part-of-the-reading-order.html', () => {
-  const file = 'series-with-spinoffs-as-part-of-the-reading-order.html';
+describe('castle-federation.html', () => {
+  const file = 'castle-federation.html';
   let doc;
   beforeAll(() => { doc = loadMockDoc(file); });
 
@@ -248,8 +248,8 @@ describe('series-with-spinoffs-as-part-of-the-reading-order.html', () => {
   });
 });
 
-describe('series-with-seemingly-tricky-numbering.html', () => {
-  const file = 'series-with-seemingly-tricky-numbering.html';
+describe('lucas-davenport.html', () => {
+  const file = 'lucas-davenport.html';
   let doc;
   beforeAll(() => { doc = loadMockDoc(file); });
 

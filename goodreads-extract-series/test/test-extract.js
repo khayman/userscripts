@@ -2,22 +2,25 @@
 // Use to eyeball extraction against the real // verbatim Goodreads page bytes. EYEBALL!
 //
 // Usage:
-//   node test/test-extract.js series.html
-//   node test/test-extract.js series-with-omnibus-at-the-bottom.html
+//   node test/test-extract.js leonid-mcgill.html
+//   node test/test-extract.js easy-rawlins.html
 //
-// Reads from test/_verbatim/<file> (gitignored cuz huge and not mine to share). If the verbatim copy is missing, falls back to the committed skeleton.
+// Reads from test/fixtures/verbatim/<file> (gitignored cuz huge and not mine to
+// share). If the verbatim copy is missing, falls back to the committed skeleton.
 
 const fs = require('fs');
 const path = require('path');
 const { Window } = require('happy-dom');
 
 const TEST_DIR = __dirname;
-const VERBATIM_DIR = path.join(TEST_DIR, '_verbatim');
+const FIXTURE_DIR = path.join(TEST_DIR, 'fixtures');
+const VERBATIM_DIR = path.join(FIXTURE_DIR, 'verbatim');
+const SKELETON_DIR = path.join(FIXTURE_DIR, 'skeletons');
 const ROOT = path.resolve(TEST_DIR, '..');
 
-const file = process.argv[2] || 'series.html';
+const file = process.argv[2] || 'leonid-mcgill.html';
 const verbatimPath = path.join(VERBATIM_DIR, file);
-const skeletonPath = path.join(TEST_DIR, file);
+const skeletonPath = path.join(SKELETON_DIR, file);
 const srcPath = fs.existsSync(verbatimPath) ? verbatimPath : skeletonPath;
 
 if (!fs.existsSync(srcPath)) {
@@ -53,7 +56,7 @@ console.log(mod.buildFilename(doc));
 // Dump any raw props entries whose title matches a substring.
 // Handy when chasing a specific book the extractor got wrong.
 // Pass extra argv as the needle:
-//   `node test/test-extract.js series.html "Wait for Signs"`.
+//   `node test/test-extract.js walt-longmire.html "Wait for Signs"`.
 const needle = process.argv[3];
 if (needle) {
   console.log('\n---- raw props entries matching "' + needle + '" ----');
