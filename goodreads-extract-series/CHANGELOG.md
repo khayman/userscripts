@@ -2,6 +2,14 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.2.4] - 2026-07-13
+
+### Fixed
+- Confirmed the same crossover-numbering bug on Lucas Davenport: five later books were being assigned their Virgil Flowers or Letty Davenport numbers, producing duplicate slots and hiding `#31` through `#35`. Added the real page fixture and regression coverage so the header-first fix stays fixed.
+
+### Tests
+- Promoted the Easy Rawlins omnibus and Castle Federation spinoff fixtures too. The former proves collection ranges stay out; the latter directly covers the bug fixed in `0.2.3`.
+
 ## [0.2.3] - 2026-07-08
 
 ### Fixed

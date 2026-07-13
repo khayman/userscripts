@@ -3,9 +3,8 @@
 //
 // Run: bun run golden:update
 //
-// For now only the baseline (series.html) is generated and enforced by the
-// test suite. The other four mocks are edge cases for a later bug-hunt
-// session — pass an explicit list of names to regenerate others, e.g.
+// With no arguments only the baseline (series.html) is generated. Pass an
+// explicit list of names to regenerate promoted or pending fixtures, e.g.
 //   bun run scripts/gen-golden.js series.html series-with-omnibus-at-the-bottom.html
 // or `bun run scripts/gen-golden.js --all` to regenerate every skeleton.
 

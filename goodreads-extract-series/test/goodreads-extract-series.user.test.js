@@ -1,10 +1,9 @@
 // Test harness: builds a real DOM from each skeleton HTML mock (happy-dom)
 // and verifies buildList() / collectBookEntries() / buildFilename() output.
 //
-// Only the baseline mock (series.html) is actively asserted. The other four
-// mocks are describe.skip()'d here — they are fixtures for the bug-hunt
-// session (see TODO.md "Pending — bug hunt"). Un-skip them one at a time
-// once each has been hand-verified against the real Goodreads page.
+// The baseline and hand-verified bug-hunt fixtures are actively asserted.
+// Other committed skeletons are discovered and describe.skip()'d below until
+// each has been hand-verified against the real Goodreads page (see TODO.md).
 //
 // Run: bun test   (or `bun run test:watch`)
 
@@ -53,9 +52,15 @@ function docFromHtmlString(html) {
   return docFromHtml(html);
 }
 
+const PROMOTED = new Set([
+  'series.html',
+  'series-with-omnibus-at-the-bottom.html',
+  'series-with-seemingly-tricky-numbering.html',
+  'series-with-spinoffs-as-part-of-the-reading-order.html',
+]);
 const mockFiles = fs
   .readdirSync(MOCK_DIR)
-  .filter((f) => /^series.*\.html$/.test(f) && f !== 'series.html')
+  .filter((f) => /^series.*\.html$/.test(f) && !PROMOTED.has(f))
   .sort();
 
 describe('series.html (baseline)', () => {
@@ -87,11 +92,126 @@ describe('series.html (baseline)', () => {
   });
 });
 
-// --- Bug-hunt follow-up (see TODO.md "Pending — bug hunt") -------------------
-// Each mock below is skipped until it's been hand-verified against the real
-// Goodreads page. Flow per mock: un-skip, hand-verify buildList output, fix
-// the script if needed, `bun run golden:update <file>` to regenerate the
-// golden, then promote from describe.skip to describe with assertions.
+// --- Bug-hunt: promoted mocks (hand-verified against the real page) ---------
+// Each was hand-verified, script fixed where needed, golden generated via
+// `bun run golden:update <file>`, then promoted from describe.skip to a
+// full describe with targeted regression assertions.
+//
+// Omnibus mock: the omnibus "(Easy Rawlins Mysteries, #1-5)" at the bottom
+// must NOT appear as a primary work (must not be misnumbered #1).
+describe('series-with-omnibus-at-the-bottom.html', () => {
+  const file = 'series-with-omnibus-at-the-bottom.html';
+  let doc;
+  beforeAll(() => { doc = loadMockDoc(file); });
+
+  test('collectBookEntries returns 17 numbered entries (omnibus excluded)', () => {
+    expect(script.collectBookEntries(doc)).toHaveLength(17);
+  });
+
+  test('no entry is misnumbered by the omnibus #1-5 range', () => {
+    const entries = script.collectBookEntries(doc);
+    const numbers = entries.map((e) => e.seriesNumber);
+    // Exactly one #1 (Devil in a Blue Dress), no extras from the omnibus.
+    expect(numbers.filter((n) => n === '1')).toHaveLength(1);
+    // The omnibus bookId 2177745 must be absent.
+    expect(entries.some((e) => e.title.includes("Walter Mosley's Easy Rawlins Mysteries"))).toBe(false);
+  });
+
+  test('lines are sorted ascending by series number', () => {
+    const list = script.buildList(doc);
+    const numbers = parseSeriesNumbers(list);
+    const sorted = [...numbers].sort((a, b) => a - b);
+    expect(numbers).toEqual(sorted);
+  });
+
+  test('buildList matches golden', () => {
+    expect(script.buildList(doc)).toBe(loadGolden(file));
+  });
+
+  test('buildFilename is "Walter Mosley - Easy Rawlins.txt"', () => {
+    expect(script.buildFilename(doc)).toBe('Walter Mosley - Easy Rawlins.txt');
+  });
+});
+
+// Spinoffs mock: three Dakotan Confederacy spinoffs are interleaved at
+// positions 7/8/9 of the Castle Federation reading order. Their titles
+// carry the foreign series' "#N" (e.g. "(Dakotan Confederacy #1)"), which
+// used to shadow the current series' number from seriesHeaders. The fix
+// prefers the aligned header ("Book 7/8/9") as the source of the number.
+describe('series-with-spinoffs-as-part-of-the-reading-order.html', () => {
+  const file = 'series-with-spinoffs-as-part-of-the-reading-order.html';
+  let doc;
+  beforeAll(() => { doc = loadMockDoc(file); });
+
+  test('collectBookEntries returns 10 numbered entries', () => {
+    expect(script.collectBookEntries(doc)).toHaveLength(10);
+  });
+
+  test('spinoffs are numbered by the current series, not the foreign one', () => {
+    const entries = script.collectBookEntries(doc);
+    const byNum = new Map(entries.map((e) => [e.seriesNumber, e]));
+    // Admiral's Oath — title says "Dakotan Confederacy #1", header says "Book 7"
+    expect(byNum.get('7').title).toBe("Admiral's Oath (Dakotan Confederacy #1)");
+    // To Stand Defiant — title says "Dakotan Confederacy, #2", header says "Book 8"
+    expect(byNum.get('8').title).toBe('To Stand Defiant');
+    // Unbroken Faith — header "Book 9"
+    expect(byNum.get('9').title).toBe('Unbroken Faith');
+    // No duplicate #1 / #2 from the foreign series.
+    expect(entries.filter((e) => e.seriesNumber === '1')).toHaveLength(1);
+    expect(entries.filter((e) => e.seriesNumber === '2')).toHaveLength(1);
+  });
+
+  test('lines are sorted ascending by series number', () => {
+    const list = script.buildList(doc);
+    const numbers = parseSeriesNumbers(list);
+    const sorted = [...numbers].sort((a, b) => a - b);
+    expect(numbers).toEqual(sorted);
+  });
+
+  test('buildList matches golden', () => {
+    expect(script.buildList(doc)).toBe(loadGolden(file));
+  });
+
+  test('buildFilename is "Glynn Stewart - Castle Federation.txt"', () => {
+    expect(script.buildFilename(doc)).toBe('Glynn Stewart - Castle Federation.txt');
+  });
+});
+
+describe('series-with-seemingly-tricky-numbering.html', () => {
+  const file = 'series-with-seemingly-tricky-numbering.html';
+  let doc;
+  beforeAll(() => { doc = loadMockDoc(file); });
+
+  test('collectBookEntries returns 37 numbered entries (collections excluded)', () => {
+    expect(script.collectBookEntries(doc)).toHaveLength(37);
+  });
+
+  test('crossovers use their Lucas Davenport numbers without duplicates', () => {
+    const entries = script.collectBookEntries(doc);
+    const numberByTitle = new Map(entries.map((e) => [e.title, e.seriesNumber]));
+
+    expect(numberByTitle.get('Ocean Prey')).toBe('31');
+    expect(numberByTitle.get('Righteous Prey')).toBe('32');
+    expect(numberByTitle.get('Judgment Prey')).toBe('33');
+    expect(numberByTitle.get('Toxic Prey')).toBe('34');
+    expect(numberByTitle.get('Lethal Prey')).toBe('35');
+    expect(new Set(entries.map((e) => e.seriesNumber)).size).toBe(entries.length);
+  });
+
+  test('buildList matches golden', () => {
+    expect(script.buildList(doc)).toBe(loadGolden(file));
+  });
+
+  test('buildFilename is "Various Authors - Lucas Davenport.txt"', () => {
+    expect(script.buildFilename(doc)).toBe('Various Authors - Lucas Davenport.txt');
+  });
+});
+
+// --- Still-skipped mocks (not yet hand-verified) -----------------------------
+// Remaining mocks stay skipped until hand-verified per TODO.md "Pending — bug
+// hunt". The omnibus and spinoffs mocks are now explicit describes above, so
+// the auto-loop picks up any other committed skeletons. (mockFiles is already
+// filtered of the promoted ones at the top of this file.)
 for (const file of mockFiles) {
   describe.skip(file, () => {
     test('buildList matches golden (placeholder)', () => {
