@@ -2,6 +2,11 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.2.5] - 2026-07-13
+
+### Fixed
+- Goodreads sometimes puts inconsistent whitespace in an author's name, which made one author look like several and produced a `Various Authors` filename. Author whitespace is now collapsed before building the list and filename.
+
 ## [0.2.4] - 2026-07-13
 
 ### Fixed

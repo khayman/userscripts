@@ -361,11 +361,33 @@ describe('pure functions', () => {
       return docFromHtmlString(html);
     }
 
+    function inconsistentAuthorWhitespaceDoc() {
+      const listProps = JSON.stringify({
+        series: [
+          { book: { bookId: 'a1', author: { name: 'Mark  Dawson' }, title: 'One (#1)', bookTitleBare: 'One' } },
+          { book: { bookId: 'a2', author: { name: 'Mark Dawson' }, title: 'Two (#2)', bookTitleBare: 'Two' } },
+        ],
+      });
+      const headerProps = JSON.stringify({ title: 'Atticus Priest Series' });
+      const html =
+        '<div data-react-class="ReactComponents.SeriesHeader" data-react-props="' + headerProps.replace(/"/g, '&quot;') + '"></div>' +
+        '<div data-react-class="ReactComponents.SeriesList" data-react-props="' + listProps.replace(/"/g, '&quot;') + '"></div>';
+      return docFromHtmlString(html);
+    }
+
     test('multi-author -> "Various Authors"', () => {
       expect(script.buildFilename(multiAuthorDoc())).toBe('Various Authors - Shared Saga.txt');
     });
     test('illegal slash sanitized in filename', () => {
       expect(script.buildFilename(illegalCharsDoc())).toBe('Solo - A_B.txt');
+    });
+    test('inconsistent author whitespace is normalized', () => {
+      const doc = inconsistentAuthorWhitespaceDoc();
+      expect(script.buildList(doc)).toBe([
+        'Mark Dawson - Atticus Priest 01 - One',
+        'Mark Dawson - Atticus Priest 02 - Two',
+      ].join('\n'));
+      expect(script.buildFilename(doc)).toBe('Mark Dawson - Atticus Priest.txt');
     });
   });
 });

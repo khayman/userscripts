@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.2.4
+// @version      0.2.5
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khay
 // @match        https://www.goodreads.com/series/*
@@ -69,7 +69,7 @@
         var id = book.bookId;
         if (id && seen.has(id)) return;
         if (id) seen.add(id);
-        var author = book.author && book.author.name ? book.author.name : '';
+        var author = book.author && book.author.name ? book.author.name.replace(/\s+/g, ' ').trim() : '';
         var titleRaw = book.title || '';
         // Prefer the positionally-aligned seriesHeaders entry (e.g.
         // "Book 7") as the source of the *current* series number. A title
