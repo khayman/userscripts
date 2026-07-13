@@ -40,13 +40,6 @@ function loadGolden(file) {
   return fs.readFileSync(path.join(EXPECTED_DIR, name), 'utf8').replace(/\n$/, '');
 }
 
-function parseSeriesNumbers(list) {
-  return list.split('\n').map((line) => {
-    const m = line.match(/ - \S+ ([\d.]+) - /);
-    return m ? parseFloat(m[1]) : null;
-  });
-}
-
 // Minimal mock document built from a string of HTML — used by buildFilename
 // unit tests so they don't depend on the committed skeletons.
 function docFromHtmlString(html) {
@@ -56,6 +49,7 @@ function docFromHtmlString(html) {
 const PROMOTED = new Set([
   'castle-federation.html',
   'easy-rawlins.html',
+  'elvis-cole-and-joe-pike.html',
   'leonid-mcgill.html',
   'lucas-davenport.html',
   'nebula-awards-showcases.html',
@@ -77,13 +71,6 @@ describe('leonid-mcgill.html (baseline)', () => {
 
   test('buildList is non-null', () => {
     expect(script.buildList(doc)).not.toBeNull();
-  });
-
-  test('lines are sorted ascending by series number', () => {
-    const list = script.buildList(doc);
-    const numbers = parseSeriesNumbers(list);
-    const sorted = [...numbers].sort((a, b) => a - b);
-    expect(numbers).toEqual(sorted);
   });
 
   test('buildList matches golden', () => {
@@ -152,13 +139,6 @@ describe('walt-longmire.html', () => {
     expect(numberByTitle.get('The Highwayman')).toBe('11.5');
   });
 
-  test('lines are sorted ascending by series number', () => {
-    const list = script.buildList(doc);
-    const numbers = parseSeriesNumbers(list);
-    const sorted = [...numbers].sort((a, b) => a - b);
-    expect(numbers).toEqual(sorted);
-  });
-
   test('buildList matches golden', () => {
     expect(script.buildList(doc)).toBe(loadGolden(file));
   });
@@ -186,13 +166,6 @@ describe('easy-rawlins.html', () => {
     expect(numbers.filter((n) => n === '1')).toHaveLength(1);
     // The omnibus bookId 2177745 must be absent.
     expect(entries.some((e) => e.title.includes("Walter Mosley's Easy Rawlins Mysteries"))).toBe(false);
-  });
-
-  test('lines are sorted ascending by series number', () => {
-    const list = script.buildList(doc);
-    const numbers = parseSeriesNumbers(list);
-    const sorted = [...numbers].sort((a, b) => a - b);
-    expect(numbers).toEqual(sorted);
   });
 
   test('buildList matches golden', () => {
@@ -230,13 +203,6 @@ describe('castle-federation.html', () => {
     // No duplicate #1 / #2 from the foreign series.
     expect(entries.filter((e) => e.seriesNumber === '1')).toHaveLength(1);
     expect(entries.filter((e) => e.seriesNumber === '2')).toHaveLength(1);
-  });
-
-  test('lines are sorted ascending by series number', () => {
-    const list = script.buildList(doc);
-    const numbers = parseSeriesNumbers(list);
-    const sorted = [...numbers].sort((a, b) => a - b);
-    expect(numbers).toEqual(sorted);
   });
 
   test('buildList matches golden', () => {
@@ -278,6 +244,30 @@ describe('lucas-davenport.html', () => {
   });
 });
 
+describe('elvis-cole-and-joe-pike.html', () => {
+  const file = 'elvis-cole-and-joe-pike.html';
+  let doc;
+  beforeAll(() => { doc = loadMockDoc(file); });
+
+  test('keeps the novel and excludes the collection from numeric slot 8', () => {
+    const entries = script.collectBookEntries(doc);
+    const slotEight = entries.filter((entry) => Number(entry.seriesNumber) === 8);
+
+    expect(entries).toHaveLength(20);
+    expect(slotEight).toHaveLength(1);
+    expect(slotEight[0].title).toBe('L.A. Requiem');
+    expect(entries.some((entry) => entry.title.includes('Three Great Novels'))).toBe(false);
+  });
+
+  test('buildList matches golden', () => {
+    expect(script.buildList(doc)).toBe(loadGolden(file));
+  });
+
+  test('buildFilename is "Robert Crais - Elvis Cole and Joe Pike.txt"', () => {
+    expect(script.buildFilename(doc)).toBe('Robert Crais - Elvis Cole and Joe Pike.txt');
+  });
+});
+
 // Any future skeletons are discovered automatically but stay skipped until
 // their output has been hand-verified and promoted to an explicit describe.
 for (const file of mockFiles) {
@@ -290,6 +280,55 @@ for (const file of mockFiles) {
 }
 
 describe('pure functions', () => {
+  describe('collectBookEntries', () => {
+    test('keeps the first numerically equivalent slot within and across lists', () => {
+      function listElement(series, seriesHeaders) {
+        const props = JSON.stringify({ series, seriesHeaders });
+        return '<div data-react-class="ReactComponents.SeriesList" data-react-props="' + props.replace(/"/g, '&quot;') + '"></div>';
+      }
+
+      const doc = docFromHtmlString(
+        listElement([
+          { book: { bookId: 'first', author: { name: 'Author' }, title: 'First', bookTitleBare: 'First' } },
+          { book: { bookId: 'same-list', author: { name: 'Author' }, title: 'Same List', bookTitleBare: 'Same List' } },
+        ], ['Book 1', 'Book 01']) +
+        listElement([
+          { book: { bookId: 'next-list', author: { name: 'Author' }, title: 'Next List', bookTitleBare: 'Next List' } },
+          { book: { bookId: 'second', author: { name: 'Author' }, title: 'Second', bookTitleBare: 'Second' } },
+        ], ['Book 1.0', 'Book 2'])
+      );
+
+      expect(script.collectBookEntries(doc)).toEqual([
+        { author: 'Author', title: 'First', seriesNumber: '1' },
+        { author: 'Author', title: 'Second', seriesNumber: '2' },
+      ]);
+    });
+  });
+
+  describe('buildList', () => {
+    test('sorts fractional and multi-digit series numbers numerically', () => {
+      const listProps = JSON.stringify({
+        series: [
+          { book: { bookId: '10', author: { name: 'Test Author' }, title: 'Ten', bookTitleBare: 'Ten' } },
+          { book: { bookId: '2', author: { name: 'Test Author' }, title: 'Two', bookTitleBare: 'Two' } },
+          { book: { bookId: '1.5', author: { name: 'Test Author' }, title: 'One and a Half', bookTitleBare: 'One and a Half' } },
+        ],
+        seriesHeaders: ['Book 10', 'Book 2', 'Book 1.5'],
+      });
+      const headerProps = JSON.stringify({ title: 'Test Series' });
+      const doc = docFromHtmlString(
+        '<div data-react-class="ReactComponents.SeriesHeader" data-react-props="' + headerProps.replace(/"/g, '&quot;') + '"></div>' +
+        '<div data-react-class="ReactComponents.SeriesList" data-react-props="' + listProps.replace(/"/g, '&quot;') + '"></div>'
+      );
+
+      expect(script.buildList(doc)).toBe([
+        'Test Author - Test 01.5 - One and a Half',
+        'Test Author - Test 02 - Two',
+        'Test Author - Test 10 - Ten',
+      ].join('\n'));
+    });
+  });
+
   describe('padSeriesNumber', () => {
     test.each([
       ['0.5', '00.5'],

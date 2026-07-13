@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.2.5
+// @version      0.2.6
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khay
 // @match        https://www.goodreads.com/series/*
@@ -55,6 +55,7 @@
     doc = doc || document;
     var lists = doc.querySelectorAll('[data-react-class="ReactComponents.SeriesList"]');
     var seen = new Set();
+    var seenSlots = new Set();
     var entries = [];
     lists.forEach(function (list) {
       var props;
@@ -86,6 +87,9 @@
           m = titleRaw.match(NUMBER_RE);
         }
         if (!m) return;
+        var numericSlot = parseFloat(m[1]);
+        if (seenSlots.has(numericSlot)) return;
+        seenSlots.add(numericSlot);
         var bookTitle = book.bookTitleBare || titleRaw.replace(PAREN_RE, '').trim();
         entries.push({ author: author, title: bookTitle, seriesNumber: m[1] });
       });

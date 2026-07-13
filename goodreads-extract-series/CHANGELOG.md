@@ -2,6 +2,14 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.2.6] - 2026-07-13
+
+### Fixed
+- Goodreads can list a collection after the real book with the same series number. The first book in each numeric slot now wins, so the collection no longer creates a duplicate entry. Equivalent numbers such as `1`, `01`, and `1.0` count as the same slot.
+
+### Tests
+- Added the Elvis Cole and Joe Pike fixture for the duplicate `Book 8` case and replaced the old sorting checks, which accidentally compared arrays of `null`, with a synthetic out-of-order regression test.
+
 ## [0.2.5] - 2026-07-13
 
 ### Fixed
