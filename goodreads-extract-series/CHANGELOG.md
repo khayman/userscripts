@@ -2,7 +2,7 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
-## [0.2.8] - 2026-07-14
+## [0.3.0] - 2026-07-14
 
 ### Fixed
 - Buttons now work with the fallback React series headers, and either missing button is restored without replacing or duplicating the other one.
