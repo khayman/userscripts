@@ -14,9 +14,9 @@ afterEach(async () => {
   await Promise.all(browsers.splice(0).map((browser) => browser.close()));
 });
 
-function reactElement(className, props) {
+function reactElement(className, props, innerHtml = '') {
   return '<div data-react-class="' + className + '" data-react-props="' +
-    JSON.stringify(props).replace(/"/g, '&quot;') + '"></div>';
+    JSON.stringify(props).replace(/"/g, '&quot;') + '">' + innerHtml + '</div>';
 }
 
 function seriesPageHtml({ includeTitle = true, includeBooks = true } = {}) {
@@ -131,6 +131,9 @@ describe('browser path', () => {
       expect(harness.win.document.querySelectorAll('.gr-extract-series-download-btn')).toHaveLength(1);
       expect(copyButton(harness.win).textContent).toBe('Copy titles');
       expect(downloadButton(harness.win).textContent).toBe('Download titles');
+      expect(copyButton(harness.win).parentElement.className).toBe('responsiveSeriesHeader__title');
+      expect(copyButton(harness.win).style.marginLeft).toBe('auto');
+      expect(downloadButton(harness.win).style.marginLeft).toBe('12px');
     });
 
     test('evaluating the complete userscript again does not duplicate the pair', () => {
@@ -287,9 +290,85 @@ describe('browser path', () => {
     });
   });
 
-  describe('Phase 4 regressions', () => {
-    test.todo('restores a missing copy or download button independently');
-    test.todo('injects into usable React series-header fallbacks');
-    test.todo('bootstraps when the page defines module.exports');
+  describe('injection hardening', () => {
+    test('injects beside a rendered heading inside the React series header', () => {
+      const html = '<!doctype html><html><body>' +
+        reactElement(
+          'ReactComponents.SeriesHeader',
+          { title: 'Example Series' },
+          '<div class="react-series-title"><h1>Example Series</h1></div>'
+        ) +
+        '</body></html>';
+      const harness = createHarness(html);
+
+      harness.evaluate();
+
+      expect(copyButton(harness.win).parentElement.className).toBe('react-series-title');
+      expect(downloadButton(harness.win).parentElement.className).toBe('react-series-title');
+    });
+
+    test('falls back to the React series-header root without a rendered heading', () => {
+      const html = '<!doctype html><html><body>' +
+        reactElement('ReactComponents.SeriesHeader', { title: 'Example Series' }) +
+        '</body></html>';
+      const harness = createHarness(html);
+
+      harness.evaluate();
+
+      const reactHeader = harness.win.document.querySelector('[data-react-class="ReactComponents.SeriesHeader"]');
+      expect(copyButton(harness.win).parentElement).toBe(reactHeader);
+      expect(downloadButton(harness.win).parentElement).toBe(reactHeader);
+    });
+
+    test('restores either missing button without replacing its existing partner', () => {
+      const harness = createHarness();
+      harness.evaluate();
+      const originalDownload = downloadButton(harness.win);
+
+      copyButton(harness.win).remove();
+      harness.evaluate();
+
+      const restoredCopy = copyButton(harness.win);
+      expect(downloadButton(harness.win)).toBe(originalDownload);
+      expect(restoredCopy.nextElementSibling).toBe(originalDownload);
+
+      originalDownload.remove();
+      harness.evaluate();
+
+      expect(copyButton(harness.win)).toBe(restoredCopy);
+      expect(downloadButton(harness.win)).not.toBeNull();
+      expect(harness.win.document.querySelectorAll('.gr-extract-series-copy-btn')).toHaveLength(1);
+      expect(harness.win.document.querySelectorAll('.gr-extract-series-download-btn')).toHaveLength(1);
+    });
+
+    test('polling completes a partial pair and remains idempotent', () => {
+      const harness = createHarness(seriesPageHtml({ includeTitle: false }));
+      harness.evaluate();
+      harness.win.document.body.insertAdjacentHTML(
+        'afterbegin',
+        '<div class="responsiveSeriesHeader__title"><h1>Example Series</h1>' +
+          '<button class="gr-extract-series-copy-btn">Existing copy</button></div>'
+      );
+
+      harness.timers.advanceBy(500);
+      harness.evaluate();
+
+      expect(copyButton(harness.win).textContent).toBe('Existing copy');
+      expect(harness.win.document.querySelectorAll('.gr-extract-series-copy-btn')).toHaveLength(1);
+      expect(harness.win.document.querySelectorAll('.gr-extract-series-download-btn')).toHaveLength(1);
+      expect(harness.timers.pendingCount).toBe(0);
+    });
+
+    test('bootstraps without touching a page-defined module.exports', () => {
+      const harness = createHarness();
+      const pageExports = { pageOwned: true };
+      harness.win.module = { exports: pageExports };
+
+      harness.evaluate();
+
+      expect(copyButton(harness.win)).not.toBeNull();
+      expect(downloadButton(harness.win)).not.toBeNull();
+      expect(harness.win.module.exports).toBe(pageExports);
+    });
   });
 });

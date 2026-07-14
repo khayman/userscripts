@@ -2,6 +2,15 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.2.8] - 2026-07-14
+
+### Fixed
+- Buttons now work with the fallback React series headers, and either missing button is restored without replacing or duplicating the other one.
+- A page-defined `module.exports` no longer tricks the userscript into skipping browser startup.
+
+### Tests
+- Added browser coverage for fallback header placement, partial button pairs, repeated injection, and page-level CommonJS collisions.
+
 ## [0.2.7] - 2026-07-14
 
 ### Fixed

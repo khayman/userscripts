@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.2.7
+// @version      0.2.8
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khay
 // @match        https://www.goodreads.com/series/*
@@ -227,45 +227,63 @@
     return btn;
   }
 
+  function getButtonTarget() {
+    var responsiveTitle = document.querySelector('.responsiveSeriesHeader__title');
+    if (responsiveTitle) return responsiveTitle;
+    var reactHeader = document.querySelector('[data-react-class="ReactComponents.SeriesHeader"]');
+    if (!reactHeader) return null;
+    var heading = reactHeader.querySelector('h1');
+    return heading ? heading.parentElement : reactHeader;
+  }
+
   function injectButtons() {
-    var titleEl = document.querySelector('.responsiveSeriesHeader__title');
+    var titleEl = getButtonTarget();
     if (!titleEl) return false;
-    if (titleEl.querySelector('.gr-extract-series-copy-btn, .gr-extract-series-download-btn')) return true;
+    var copyBtn = titleEl.querySelector('.gr-extract-series-copy-btn');
+    var downloadBtn = titleEl.querySelector('.gr-extract-series-download-btn');
 
-    var copyBtn = createButton({
-      className: 'gr-extract-series-copy-btn',
-      idleLabel: 'Copy titles',
-      marginLeft: 'auto',
-      onClick: async function () {
-        var list = buildList();
-        if (!list) return { label: 'No numbered titles found', kind: 'warn' };
-        var count = list.split('\n').length;
-        var ok = false;
-        try { ok = await copyToClipboard(list); } catch (_) { ok = false; }
-        return ok
-          ? { label: 'Copied ' + count + ' titles', kind: 'success' }
-          : { label: 'Copy failed', kind: 'error' };
-      },
-    });
+    if (!copyBtn) {
+      copyBtn = createButton({
+        className: 'gr-extract-series-copy-btn',
+        idleLabel: 'Copy titles',
+        marginLeft: 'auto',
+        onClick: async function () {
+          var list = buildList();
+          if (!list) return { label: 'No numbered titles found', kind: 'warn' };
+          var count = list.split('\n').length;
+          var ok = false;
+          try { ok = await copyToClipboard(list); } catch (_) { ok = false; }
+          return ok
+            ? { label: 'Copied ' + count + ' titles', kind: 'success' }
+            : { label: 'Copy failed', kind: 'error' };
+        },
+      });
+      if (downloadBtn && downloadBtn.parentNode === titleEl) {
+        titleEl.insertBefore(copyBtn, downloadBtn);
+      } else {
+        titleEl.appendChild(copyBtn);
+      }
+    }
 
-    var downloadBtn = createButton({
-      className: 'gr-extract-series-download-btn',
-      idleLabel: 'Download titles',
-      onClick: async function () {
-        var list = buildList();
-        if (!list) return { label: 'No numbered titles found', kind: 'warn' };
-        var count = list.split('\n').length;
-        var filename = buildFilename();
-        var ok = false;
-        try { ok = downloadText(list, filename); } catch (_) { ok = false; }
-        return ok
-          ? { label: 'Downloaded ' + count + ' titles', kind: 'success' }
-          : { label: 'Download failed', kind: 'error' };
-      },
-    });
+    if (!downloadBtn) {
+      downloadBtn = createButton({
+        className: 'gr-extract-series-download-btn',
+        idleLabel: 'Download titles',
+        onClick: async function () {
+          var list = buildList();
+          if (!list) return { label: 'No numbered titles found', kind: 'warn' };
+          var count = list.split('\n').length;
+          var filename = buildFilename();
+          var ok = false;
+          try { ok = downloadText(list, filename); } catch (_) { ok = false; }
+          return ok
+            ? { label: 'Downloaded ' + count + ' titles', kind: 'success' }
+            : { label: 'Download failed', kind: 'error' };
+        },
+      });
+      titleEl.appendChild(downloadBtn);
+    }
 
-    titleEl.appendChild(copyBtn);
-    titleEl.appendChild(downloadBtn);
     return true;
   }
 
@@ -282,7 +300,7 @@
 
   // --- Exports for Node testing (non-browser) ---
   // eslint-disable-next-line no-undef
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof document === 'undefined' && typeof module !== 'undefined' && module.exports) {
     // eslint-disable-next-line no-undef
     module.exports = {
       padSeriesNumber: padSeriesNumber,
