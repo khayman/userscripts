@@ -2,6 +2,7 @@
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
 // @version      0.2.8
+// @license      0BSD
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khay
 // @match        https://www.goodreads.com/series/*
