@@ -1,11 +1,16 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.2.8
+// @version      0.3.0
 // @license      0BSD
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
-// @author       khay
+// @author       khayman
+// @homepageURL  https://github.com/khayman/userscripts/tree/main/goodreads-extract-series
+// @supportURL   https://github.com/khayman/userscripts/issues
+// @downloadURL  https://raw.githubusercontent.com/khayman/userscripts/main/goodreads-extract-series/goodreads-extract-series.user.js
+// @updateURL    https://raw.githubusercontent.com/khayman/userscripts/main/goodreads-extract-series/goodreads-extract-series.user.js
 // @match        https://www.goodreads.com/series/*
+// @icon         https://www.goodreads.com/favicon.ico
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
@@ -14,10 +19,8 @@
   'use strict';
 
   var SERIES_SUFFIX = /\s+Series$/i;
-  // Match "#N" or "#N.M" inside the parenthesised series token, e.g.
-  // "Title (Series, #1)" or "Title (Series #0.5)". The closing ")" is
-  // required so that omnibus ranges like "(Series, #1-5)" don't capture "1"
-  // and get misnumbered as a primary work.
+  // Only Goodreads' aligned current-series header is trustworthy; titles can
+  // begin with a number belonging to a different series.
   var HEADER_RE = /^Book\s+(\d+(?:\.\d+)?)$/i;
   var PAD_WIDTH = 2;
 

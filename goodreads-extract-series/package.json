@@ -1,6 +1,6 @@
 {
   "name": "goodreads-extract-series",
-  "version": "0.2.8",
+  "version": "0.3.0",
   "private": true,
   "description": "Tampermonkey/Violentmonkey userscript that extracts an Author - Series NN - Title list from Goodreads series pages.",
   "scripts": {
