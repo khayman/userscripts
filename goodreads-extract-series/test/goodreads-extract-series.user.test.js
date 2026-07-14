@@ -46,6 +46,26 @@ function docFromHtmlString(html) {
   return docFromHtml(html);
 }
 
+function reactElement(className, props, innerHtml = '') {
+  return '<div data-react-class="' + className + '" data-react-props="' +
+    JSON.stringify(props).replace(/"/g, '&quot;') + '">' + innerHtml + '</div>';
+}
+
+function singleBookDoc(seriesHeader, book = {}) {
+  return docFromHtmlString(reactElement('ReactComponents.SeriesList', {
+    series: [{
+      book: {
+        bookId: 'book',
+        author: { name: 'Author' },
+        title: 'A Title (Example Series, #4)',
+        bookTitleBare: 'A Title',
+        ...book,
+      },
+    }],
+    seriesHeaders: [seriesHeader],
+  }));
+}
+
 const PROMOTED = new Set([
   'castle-federation.html',
   'easy-rawlins.html',
@@ -205,6 +225,23 @@ describe('castle-federation.html', () => {
     expect(entries.filter((e) => e.seriesNumber === '2')).toHaveLength(1);
   });
 
+  test('skips crossovers rather than using foreign-series title numbers when aligned headers are invalid', () => {
+    const mutatedDoc = loadMockDoc(file);
+    const crossoverTitles = ["Admiral's Oath (Dakotan Confederacy #1)", 'To Stand Defiant', 'Unbroken Faith'];
+
+    mutatedDoc.querySelectorAll('[data-react-class="ReactComponents.SeriesList"]').forEach((list) => {
+      const props = JSON.parse(list.getAttribute('data-react-props'));
+      props.series.forEach((_, i) => {
+        if (/^Book (?:7|8|9)$/.test(props.seriesHeaders[i])) props.seriesHeaders[i] = 'not a book number';
+      });
+      list.setAttribute('data-react-props', JSON.stringify(props));
+    });
+
+    const entries = script.collectBookEntries(mutatedDoc);
+    expect(entries.filter((entry) => crossoverTitles.includes(entry.title))).toEqual([]);
+    expect(entries.map((entry) => Number(entry.seriesNumber))).toEqual([1, 2, 3, 4, 5, 6, 6.5]);
+  });
+
   test('buildList matches golden', () => {
     expect(script.buildList(doc)).toBe(loadGolden(file));
   });
@@ -303,6 +340,94 @@ describe('pure functions', () => {
         { author: 'Author', title: 'Second', seriesNumber: '2' },
       ]);
     });
+
+    test.each([
+      ['Book 1', '1'],
+      ['Book 0.5', '0.5'],
+      ['book 10.25', '10.25'],
+    ])('accepts aligned header %s', (header, expected) => {
+      expect(script.collectBookEntries(singleBookDoc(header))).toEqual([
+        { author: 'Author', title: 'A Title', seriesNumber: expected },
+      ]);
+    });
+
+    test.each([
+      'Book .',
+      'Book .5',
+      'Book 1.',
+      'Book 1..2',
+      'Book 1-5',
+      'Book 1, 2',
+      'Book 1 extra',
+      'prefix Book 1',
+      ' Book 1 ',
+      undefined,
+    ])('rejects malformed or missing aligned header %p', (header) => {
+      expect(script.collectBookEntries(singleBookDoc(header))).toEqual([]);
+    });
+
+    test('does not infer a number from the title without a valid aligned header', () => {
+      expect(script.collectBookEntries(singleBookDoc(undefined))).toEqual([]);
+    });
+
+    test('preserves the trimmed raw title when bookTitleBare is missing', () => {
+      const doc = singleBookDoc('Book 4', {
+        title: '  A Title (Revised Edition)  ',
+        bookTitleBare: undefined,
+      });
+
+      expect(script.collectBookEntries(doc)).toEqual([
+        { author: 'Author', title: 'A Title (Revised Edition)', seriesNumber: '4' },
+      ]);
+    });
+
+    test('an invalid unnumbered duplicate ID suppresses a later valid copy', () => {
+      const doc = docFromHtmlString(
+        reactElement('ReactComponents.SeriesList', {
+          series: [{ book: { bookId: 'same', author: { name: 'Author' }, title: 'Unnumbered' } }],
+          seriesHeaders: ['Book nope'],
+        }) +
+        reactElement('ReactComponents.SeriesList', {
+          series: [{ book: { bookId: 'same', author: { name: 'Author' }, title: 'Numbered', bookTitleBare: 'Numbered' } }],
+          seriesHeaders: ['Book 1'],
+        })
+      );
+
+      expect(script.collectBookEntries(doc)).toEqual([]);
+    });
+
+    test('ignores invalid list JSON and continues with later lists', () => {
+      const doc = docFromHtmlString(
+        '<div data-react-class="ReactComponents.SeriesList" data-react-props="{bad"></div>' +
+        reactElement('ReactComponents.SeriesList', {
+          series: [{ book: { bookId: 'valid', author: { name: 'Author' }, title: 'Valid', bookTitleBare: 'Valid' } }],
+          seriesHeaders: ['Book 1'],
+        })
+      );
+
+      expect(script.collectBookEntries(doc)).toEqual([
+        { author: 'Author', title: 'Valid', seriesNumber: '1' },
+      ]);
+    });
+  });
+
+  describe('getSeriesName', () => {
+    test.each(['', '   '])('falls through empty props title %p to the nested heading', (title) => {
+      const doc = docFromHtmlString(
+        reactElement('ReactComponents.SeriesHeader', { title }, '<h1>Nested Series</h1>')
+      );
+
+      expect(script.getSeriesName(doc)).toBe('Nested');
+    });
+
+    test('falls through empty React header candidates to the responsive heading', () => {
+      const doc = docFromHtmlString(
+        '<div data-react-class="ReactComponents.SeriesHeader" data-react-props="{bad"><h1>   </h1></div>' +
+        '<div class="responsiveSeriesHeader__title"><h1>Responsive Series</h1></div>'
+      );
+
+      expect(script.getSeriesName(doc)).toBe('Responsive');
+    });
   });
 
   describe('buildList', () => {
@@ -377,6 +502,7 @@ describe('pure functions', () => {
           { book: { bookId: 'a1', author: { name: 'Author One' }, title: 'Book One (#1)', bookTitleBare: 'Book One' } },
           { book: { bookId: 'b2', author: { name: 'Author Two' }, title: 'Book Two (#2)', bookTitleBare: 'Book Two' } },
         ],
+        seriesHeaders: ['Book 1', 'Book 2'],
       });
       const headerProps = JSON.stringify({ title: 'Shared Saga' });
       const html =
@@ -391,6 +517,7 @@ describe('pure functions', () => {
         series: [
           { book: { bookId: 'x', author: { name: 'Solo' }, title: 'T (#1)', bookTitleBare: 'T' } },
         ],
+        seriesHeaders: ['Book 1'],
       });
       const headerProps = JSON.stringify({ title: 'A/B Series' });
       const html =
@@ -406,6 +533,7 @@ describe('pure functions', () => {
           { book: { bookId: 'a1', author: { name: 'Mark  Dawson' }, title: 'One (#1)', bookTitleBare: 'One' } },
           { book: { bookId: 'a2', author: { name: 'Mark Dawson' }, title: 'Two (#2)', bookTitleBare: 'Two' } },
         ],
+        seriesHeaders: ['Book 1', 'Book 2'],
       });
       const headerProps = JSON.stringify({ title: 'Atticus Priest Series' });
       const html =

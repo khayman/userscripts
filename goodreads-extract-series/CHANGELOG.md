@@ -2,6 +2,15 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.2.7] - 2026-07-14
+
+### Fixed
+- Series numbers now come only from Goodreads' aligned `Book N` headers. Missing or malformed headers are skipped instead of guessing from a title that might name a different series.
+- Missing bare-title data no longer strips a legitimate final parenthetical from the book title, and empty series-name candidates now fall through to the next available heading.
+
+### Tests
+- Added browser coverage for button injection, clipboard fallback, downloads, feedback timers, and delayed-header polling.
+
 ## [0.2.6] - 2026-07-13
 
 ### Fixed

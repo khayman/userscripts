@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.2.6
+// @version      0.2.7
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khay
 // @match        https://www.goodreads.com/series/*
@@ -17,9 +17,7 @@
   // "Title (Series, #1)" or "Title (Series #0.5)". The closing ")" is
   // required so that omnibus ranges like "(Series, #1-5)" don't capture "1"
   // and get misnumbered as a primary work.
-  var NUMBER_RE = /#\s*([\d.]+)\)/;
-  var HEADER_RE = /^Book\s+([\d.]+)$/i;
-  var PAREN_RE = /\s*\([^)]*\)\s*$/;
+  var HEADER_RE = /^Book\s+(\d+(?:\.\d+)?)$/i;
   var PAD_WIDTH = 2;
 
   function padSeriesNumber(numStr) {
@@ -29,7 +27,7 @@
   }
 
   function stripSeriesSuffix(title) {
-    return title.replace(SERIES_SUFFIX, '').trim();
+    return title.trim().replace(SERIES_SUFFIX, '').trim();
   }
 
   function sanitize(str) {
@@ -42,13 +40,21 @@
     if (header) {
       try {
         var props = JSON.parse(header.getAttribute('data-react-props') || '{}');
-        if (props && props.title) return stripSeriesSuffix(props.title);
+        if (props && props.title) {
+          var propsTitle = stripSeriesSuffix(props.title);
+          if (propsTitle) return propsTitle;
+        }
       } catch (_) { /* fall through */ }
       var h1 = header.querySelector('h1');
-      if (h1) return stripSeriesSuffix(h1.textContent);
+      if (h1) {
+        var headerTitle = stripSeriesSuffix(h1.textContent);
+        if (headerTitle) return headerTitle;
+      }
     }
     var titleEl = doc.querySelector('.responsiveSeriesHeader__title h1');
-    return titleEl ? stripSeriesSuffix(titleEl.textContent) : null;
+    if (!titleEl) return null;
+    var responsiveTitle = stripSeriesSuffix(titleEl.textContent);
+    return responsiveTitle || null;
   }
 
   function collectBookEntries(doc) {
@@ -72,25 +78,13 @@
         if (id) seen.add(id);
         var author = book.author && book.author.name ? book.author.name.replace(/\s+/g, ' ').trim() : '';
         var titleRaw = book.title || '';
-        // Prefer the positionally-aligned seriesHeaders entry (e.g.
-        // "Book 7") as the source of the *current* series number. A title
-        // like "Admiral's Oath (Dakotan Confederacy #1) (Castle Federation,
-        // #7)" carries a foreign series' "#1" which would otherwise
-        // shadow the real number. Fall back to the title's "#N)" token
-        // only when the header is missing or doesn't parse.
-        var m = null;
         var header = headers[i];
-        if (typeof header === 'string') {
-          m = header.match(HEADER_RE);
-        }
-        if (!m) {
-          m = titleRaw.match(NUMBER_RE);
-        }
+        var m = typeof header === 'string' ? header.match(HEADER_RE) : null;
         if (!m) return;
         var numericSlot = parseFloat(m[1]);
         if (seenSlots.has(numericSlot)) return;
         seenSlots.add(numericSlot);
-        var bookTitle = book.bookTitleBare || titleRaw.replace(PAREN_RE, '').trim();
+        var bookTitle = book.bookTitleBare || titleRaw.trim();
         entries.push({ author: author, title: bookTitle, seriesNumber: m[1] });
       });
     });
