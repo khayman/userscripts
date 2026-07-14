@@ -4,7 +4,7 @@ A small, dependency-free userscript that adds `Copy titles` and `Download titles
 
 Made mostly as an exercise to learn more about [Bun](https://github.com/oven-sh/bun) and [`happy-dom`](https://github.com/capricorn86/happy-dom).
 
-While I was doing this, I discovered that [Hardcover](https://hardcover.app) exists, which is likely a better choice than GoodReads. In fact, this project allowed me to take a good, long look at GoodReads' frontend code, and I can confidently tell you it's **definitely** a better choice. Mongo is appalled.
+While I was doing this, I discovered that [Hardcover](https://hardcover.app) exists, which is likely a better choice than Goodreads. In fact, this project allowed me to take a good, long look at Goodreads' frontend code, and I can confidently tell you it's **definitely** a better choice. Mongo is appalled.
 
 Maybe I'll create a version for Hardcover too one day, it should be easier.
 
@@ -54,7 +54,7 @@ If the label is missing or malformed, the script skips the book instead of guess
 
 I tried my best to support various kinds of series pages, from single authors, to co-written series and anthologies. Chances are you might still encounter certain uniquely shaped lists of series where the script can get tripped up.
 
-Feel free to [open an issue](https://github.com/khayman/userscripts/issues/new) when that happens (don't forget to include the GoodReads link), and I'll look into fixing it.
+Feel free to [open an issue](https://github.com/khayman/userscripts/issues/new) when that happens (don't forget to include the Goodreads link), and I'll look into fixing it.
 
 ## Limitations
 
