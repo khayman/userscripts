@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.3.1
+// @version      0.3.2
 // @license      0BSD
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khayman
@@ -22,6 +22,7 @@
   // Only Goodreads' aligned current-series header is trustworthy; titles can
   // begin with a number belonging to a different series.
   var HEADER_RE = /^Book\s+(\d+(?:\.\d+)?)$/i;
+  var TRAILING_SERIES_MARKER_RE = /\s+\([^()#]+#\d+(?:\.\d+)?\)$/;
   var PAD_WIDTH = 2;
 
   function padSeriesNumber(numStr) {
@@ -105,7 +106,9 @@
         var numericSlot = parseFloat(m[1]);
         if (seenSlots.has(numericSlot)) return;
         seenSlots.add(numericSlot);
-        var bookTitle = book.bookTitleBare || titleRaw.trim();
+        var bookTitle = book.bookTitleBare
+          ? book.bookTitleBare.trim().replace(TRAILING_SERIES_MARKER_RE, '').trim()
+          : titleRaw.trim();
         entries.push({ author: author, title: bookTitle, seriesNumber: m[1] });
       });
     });

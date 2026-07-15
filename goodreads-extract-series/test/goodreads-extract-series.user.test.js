@@ -214,8 +214,9 @@ describe('castle-federation.html', () => {
   test('spinoffs are numbered by the current series, not the foreign one', () => {
     const entries = script.collectBookEntries(doc);
     const byNum = new Map(entries.map((e) => [e.seriesNumber, e]));
-    // Admiral's Oath — title says "Dakotan Confederacy #1", header says "Book 7"
-    expect(byNum.get('7').title).toBe("Admiral's Oath (Dakotan Confederacy #1)");
+    // Goodreads leaves the foreign-series marker in bookTitleBare, but it is
+    // metadata rather than part of the title.
+    expect(byNum.get('7').title).toBe("Admiral's Oath");
     // To Stand Defiant — title says "Dakotan Confederacy, #2", header says "Book 8"
     expect(byNum.get('8').title).toBe('To Stand Defiant');
     // Unbroken Faith — header "Book 9"
@@ -227,7 +228,7 @@ describe('castle-federation.html', () => {
 
   test('skips crossovers rather than using foreign-series title numbers when aligned headers are invalid', () => {
     const mutatedDoc = loadMockDoc(file);
-    const crossoverTitles = ["Admiral's Oath (Dakotan Confederacy #1)", 'To Stand Defiant', 'Unbroken Faith'];
+    const crossoverTitles = ["Admiral's Oath", 'To Stand Defiant', 'Unbroken Faith'];
 
     mutatedDoc.querySelectorAll('[data-react-class="ReactComponents.SeriesList"]').forEach((list) => {
       const props = JSON.parse(list.getAttribute('data-react-props'));
@@ -379,6 +380,15 @@ describe('pure functions', () => {
       expect(script.collectBookEntries(doc)).toEqual([
         { author: 'Lavender Gooms', title: 'A Title (Revised Edition)', seriesNumber: '4' },
       ]);
+    });
+
+    test('does not remove a series-looking parenthetical from the raw-title fallback', () => {
+      const doc = singleBookDoc('Book 4', {
+        title: 'A Title (Volume #1)',
+        bookTitleBare: undefined,
+      });
+
+      expect(script.collectBookEntries(doc)[0].title).toBe('A Title (Volume #1)');
     });
 
     test('an invalid unnumbered duplicate ID suppresses a later valid copy', () => {

@@ -2,6 +2,14 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.3.2] - 2026-07-15
+
+### Fixed
+- Removed trailing foreign-series metadata that Goodreads sometimes leaves in `bookTitleBare`, so, for example, [Castle Federation](https://www.goodreads.com/series/171054-castle-federation) now exports `Admiral's Oath` rather than `Admiral's Oath (Dakotan Confederacy #1)`. Raw-title fallbacks are still left alone because their final parenthetical may be part of the real title.
+
+### Tests
+- Tightened the Castle Federation regression and golden output around the leaked Dakotan Confederacy marker.
+
 ## [0.3.1] - 2026-07-15
 
 ### Changed
