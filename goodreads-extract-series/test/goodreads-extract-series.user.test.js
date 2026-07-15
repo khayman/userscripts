@@ -484,11 +484,36 @@ describe('pure functions', () => {
     test('dots and spaces preserved', () => {
       expect(script.sanitize('Series 01.5')).toBe('Series 01.5');
     });
-    test('all illegal chars -> underscore', () => {
-      expect(script.sanitize('A/B\\C:D*E?F"G<H>I|J')).toBe('A_B_C_D_E_F_G_H_I_J');
+    test('normalizes curly apostrophes', () => {
+      expect(script.sanitize('‘Rock ’n’ Roll’')).toBe("'Rock 'n' Roll'");
     });
-    test('control char -> underscore', () => {
-      expect(script.sanitize('a\x01b')).toBe('a_b');
+    test('turns paired ASCII double quotes into curly quotes', () => {
+      expect(script.sanitize('The "quoted" title')).toBe('The “quoted” title');
+    });
+    test('preserves existing curly double quotes', () => {
+      expect(script.sanitize('The “quoted” title')).toBe('The “quoted” title');
+    });
+    test('uses context for unmatched ASCII double quotes', () => {
+      expect(script.sanitize('About 6" tall')).toBe('About 6” tall');
+      expect(script.sanitize('The "unfinished title')).toBe('The “unfinished title');
+    });
+    test('replaces colons and surrounding whitespace with one spaced en dash', () => {
+      expect(script.sanitize('Title :::  Subtitle')).toBe('Title – Subtitle');
+    });
+    test('replaces pipes and surrounding whitespace with one spaced en dash', () => {
+      expect(script.sanitize('Title | Subtitle')).toBe('Title – Subtitle');
+    });
+    test('replaces slashes and surrounding whitespace with one spaced en dash', () => {
+      expect(script.sanitize('One / Two \\ Three')).toBe('One – Two – Three');
+    });
+    test('removes question marks and asterisks', () => {
+      expect(script.sanitize('Is This? A *Title*')).toBe('Is This A Title');
+    });
+    test('turns paired angle brackets into square brackets and removes unmatched ones', () => {
+      expect(script.sanitize('A <subtitle> and B > C <')).toBe('A [subtitle] and B C');
+    });
+    test('replaces controls with spaces and normalizes whitespace', () => {
+      expect(script.sanitize('  a\x01\t b\x7f  c  ')).toBe('a b c');
     });
     test('empty string unchanged', () => {
       expect(script.sanitize('')).toBe('');
@@ -545,8 +570,8 @@ describe('pure functions', () => {
     test('multi-author -> "Various Authors"', () => {
       expect(script.buildFilename(multiAuthorDoc())).toBe('Various Authors - Shared Saga.txt');
     });
-    test('illegal slash sanitized in filename', () => {
-      expect(script.buildFilename(illegalCharsDoc())).toBe('Solo - A_B.txt');
+    test('illegal slash is replaced with a filename-safe separator', () => {
+      expect(script.buildFilename(illegalCharsDoc())).toBe('Solo - A – B.txt');
     });
     test('inconsistent author whitespace is normalized', () => {
       const doc = inconsistentAuthorWhitespaceDoc();

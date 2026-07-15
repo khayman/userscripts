@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Goodreads Extract Series
 // @namespace    https://github.com/khayman/userscripts/goodreads-extract-series
-// @version      0.3.0
+// @version      0.3.1
 // @license      0BSD
 // @description  Copy an "Author - Series NN - Title" list from a Goodreads series page
 // @author       khayman
@@ -35,7 +35,24 @@
   }
 
   function sanitize(str) {
-    return str.replace(/[\/\\:*?"<>|\x00-\x1F]/g, '_');
+    var expectingOpeningQuote = true;
+    str = str.replace(/[‘’]/g, "'");
+    str = str.replace(/"/g, function (_, index, input) {
+      var previous = input[index - 1] || '';
+      var next = input[index + 1] || '';
+      var opensByContext = (!previous || /[\s([{\-–—]/.test(previous)) && next && !/\s/.test(next);
+      var closesByContext = previous && !/\s/.test(previous) && (!next || /[\s)\]},.!;:?\-–—]/.test(next));
+      var opening = opensByContext || (!closesByContext && expectingOpeningQuote);
+      expectingOpeningQuote = !opening;
+      return opening ? '“' : '”';
+    });
+    str = str.replace(/<([^<>]*)>/g, '[$1]').replace(/[<>]/g, '');
+    str = str.replace(/[\x00-\x1F\x7F]/g, ' ');
+    str = str.replace(/\s*:+(?:\s*:+)*\s*/g, ' – ');
+    str = str.replace(/\s*\|+\s*/g, ' – ');
+    str = str.replace(/\s*[\/\\]+\s*/g, ' – ');
+    str = str.replace(/[?*]/g, '');
+    return str.replace(/\s+/g, ' ').trim();
   }
 
   function getSeriesName(doc) {

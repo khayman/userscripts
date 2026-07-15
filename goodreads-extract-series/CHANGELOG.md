@@ -2,6 +2,14 @@
 
 Stuff I've changed, mostly so I remember what happened when.
 
+## [0.3.1] - 2026-07-15
+
+### Changed
+- Replaced the blanket underscore treatment with filename-safe typography. Separators now become spaced en dashes, straight double quotes become contextual curly quotes, curly apostrophes become ASCII apostrophes, and the remaining troublesome punctuation and whitespace get cleaned up without peppering titles with underscores.
+
+### Tests
+- Added focused coverage for every sanitization rule and updated the Walt Longmire, Nebula Awards, and Lucas Davenport goldens that contain colons.
+
 ## [0.3.0] - 2026-07-14
 
 ### Fixed

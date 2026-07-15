@@ -20,7 +20,7 @@ Robert Crais - Elvis Cole and Joe Pike 03 - Lullaby Town
 
 The script sorts the books by number and pads whole numbers to two digits. Fractional positions stay put, so `0.5` becomes `00.5`.
 
-Downloaded files use the name `<author> - <series>.txt`. If the series has more than one author, it uses `Various Authors` instead. Characters that Windows does not allow in filenames become underscores.
+Downloaded files use the name `<author> - <series>.txt`. If the series has more than one author, it uses `Various Authors` instead. Punctuation is normalized into filename-safe typography across the list and filename.
 
 ## Install it
 
@@ -62,7 +62,7 @@ Feel free to [open an issue](https://github.com/khayman/userscripts/issues/new) 
 - It reads Goodreads' embedded React data and header markup, so a redesign may break it.
 - Unnumbered books and labels that do not exactly match `Book N` or `Book N.M` get skipped.
 - Titles otherwise stay as Goodreads wrote them, including foreign-series text in parentheses.
-- Apostrophes, curly quotes, and colons are not normalized. Filesystem-illegal characters become `_`.
+- Filename-hostile punctuation is normalized rather than copied exactly: separators become spaced en dashes, ASCII double quotes become curly quotes, and question marks and asterisks are removed.
 
 ## Development
 
