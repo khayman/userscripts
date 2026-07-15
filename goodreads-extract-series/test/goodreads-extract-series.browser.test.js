@@ -28,7 +28,7 @@ function seriesPageHtml({ includeTitle = true, includeBooks = true } = {}) {
         series: [{
           book: {
             bookId: 'book-2',
-            author: { name: 'Trapezius Milkington' },
+            author: { name: 'Ghee Buttersnaps' },
             title: 'A Title (Example Series, #2)',
             bookTitleBare: 'A Title',
           },
@@ -189,7 +189,7 @@ describe('browser path', () => {
 
       await click(copyButton(harness.win));
 
-      expect(writes).toEqual(['Trapezius Milkington - Example 02 - A Title']);
+      expect(writes).toEqual(['Ghee Buttersnaps - Example 02 - A Title']);
       expect(copyButton(harness.win).textContent).toBe('Copied 1 titles');
     });
 
@@ -209,7 +209,7 @@ describe('browser path', () => {
 
       await click(copyButton(harness.win));
 
-      expect(copiedText).toBe('Trapezius Milkington - Example 02 - A Title');
+      expect(copiedText).toBe('Ghee Buttersnaps - Example 02 - A Title');
       expect(harness.win.document.querySelector('textarea')).toBeNull();
       expect(copyButton(harness.win).textContent).toBe('Copied 1 titles');
     });
@@ -239,10 +239,10 @@ describe('browser path', () => {
 
       expect(blobs).toHaveLength(1);
       expect(blobs[0]).toEqual({
-        parts: ['Trapezius Milkington - Example 02 - A Title'],
+        parts: ['Ghee Buttersnaps - Example 02 - A Title'],
         type: 'text/plain',
       });
-      expect(clicks).toEqual([{ href: 'blob:test-url', download: 'Trapezius Milkington - Example.txt' }]);
+      expect(clicks).toEqual([{ href: 'blob:test-url', download: 'Ghee Buttersnaps - Example.txt' }]);
       expect(revoked).toEqual(['blob:test-url']);
       expect(harness.win.document.querySelector('a')).toBeNull();
       expect(downloadButton(harness.win).textContent).toBe('Downloaded 1 titles');

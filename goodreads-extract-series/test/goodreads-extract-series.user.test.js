@@ -56,7 +56,7 @@ function singleBookDoc(seriesHeader, book = {}) {
     series: [{
       book: {
         bookId: 'book',
-        author: { name: 'Author' },
+        author: { name: 'Lavender Gooms' },
         title: 'A Title (Example Series, #4)',
         bookTitleBare: 'A Title',
         ...book,
@@ -326,18 +326,18 @@ describe('pure functions', () => {
 
       const doc = docFromHtmlString(
         listElement([
-          { book: { bookId: 'first', author: { name: 'Author' }, title: 'First', bookTitleBare: 'First' } },
-          { book: { bookId: 'same-list', author: { name: 'Author' }, title: 'Same List', bookTitleBare: 'Same List' } },
+          { book: { bookId: 'first', author: { name: 'Methuselah Honeysuckle' }, title: 'First', bookTitleBare: 'First' } },
+          { book: { bookId: 'same-list', author: { name: 'Methuselah Honeysuckle' }, title: 'Same List', bookTitleBare: 'Same List' } },
         ], ['Book 1', 'Book 01']) +
         listElement([
-          { book: { bookId: 'next-list', author: { name: 'Author' }, title: 'Next List', bookTitleBare: 'Next List' } },
-          { book: { bookId: 'second', author: { name: 'Author' }, title: 'Second', bookTitleBare: 'Second' } },
+          { book: { bookId: 'next-list', author: { name: 'Methuselah Honeysuckle' }, title: 'Next List', bookTitleBare: 'Next List' } },
+          { book: { bookId: 'second', author: { name: 'Methuselah Honeysuckle' }, title: 'Second', bookTitleBare: 'Second' } },
         ], ['Book 1.0', 'Book 2'])
       );
 
       expect(script.collectBookEntries(doc)).toEqual([
-        { author: 'Author', title: 'First', seriesNumber: '1' },
-        { author: 'Author', title: 'Second', seriesNumber: '2' },
+        { author: 'Methuselah Honeysuckle', title: 'First', seriesNumber: '1' },
+        { author: 'Methuselah Honeysuckle', title: 'Second', seriesNumber: '2' },
       ]);
     });
 
@@ -347,7 +347,7 @@ describe('pure functions', () => {
       ['book 10.25', '10.25'],
     ])('accepts aligned header %s', (header, expected) => {
       expect(script.collectBookEntries(singleBookDoc(header))).toEqual([
-        { author: 'Author', title: 'A Title', seriesNumber: expected },
+        { author: 'Lavender Gooms', title: 'A Title', seriesNumber: expected },
       ]);
     });
 
@@ -377,18 +377,18 @@ describe('pure functions', () => {
       });
 
       expect(script.collectBookEntries(doc)).toEqual([
-        { author: 'Author', title: 'A Title (Revised Edition)', seriesNumber: '4' },
+        { author: 'Lavender Gooms', title: 'A Title (Revised Edition)', seriesNumber: '4' },
       ]);
     });
 
     test('an invalid unnumbered duplicate ID suppresses a later valid copy', () => {
       const doc = docFromHtmlString(
         reactElement('ReactComponents.SeriesList', {
-          series: [{ book: { bookId: 'same', author: { name: 'Author' }, title: 'Unnumbered' } }],
+          series: [{ book: { bookId: 'same', author: { name: 'Gurton Buster' }, title: 'Unnumbered' } }],
           seriesHeaders: ['Book nope'],
         }) +
         reactElement('ReactComponents.SeriesList', {
-          series: [{ book: { bookId: 'same', author: { name: 'Author' }, title: 'Numbered', bookTitleBare: 'Numbered' } }],
+          series: [{ book: { bookId: 'same', author: { name: 'Gurton Buster' }, title: 'Numbered', bookTitleBare: 'Numbered' } }],
           seriesHeaders: ['Book 1'],
         })
       );
@@ -400,13 +400,13 @@ describe('pure functions', () => {
       const doc = docFromHtmlString(
         '<div data-react-class="ReactComponents.SeriesList" data-react-props="{bad"></div>' +
         reactElement('ReactComponents.SeriesList', {
-          series: [{ book: { bookId: 'valid', author: { name: 'Author' }, title: 'Valid', bookTitleBare: 'Valid' } }],
+          series: [{ book: { bookId: 'valid', author: { name: 'Hummingbird Saltalamacchia' }, title: 'Valid', bookTitleBare: 'Valid' } }],
           seriesHeaders: ['Book 1'],
         })
       );
 
       expect(script.collectBookEntries(doc)).toEqual([
-        { author: 'Author', title: 'Valid', seriesNumber: '1' },
+        { author: 'Hummingbird Saltalamacchia', title: 'Valid', seriesNumber: '1' },
       ]);
     });
   });
@@ -434,9 +434,9 @@ describe('pure functions', () => {
     test('sorts fractional and multi-digit series numbers numerically', () => {
       const listProps = JSON.stringify({
         series: [
-          { book: { bookId: '10', author: { name: 'Test Author' }, title: 'Ten', bookTitleBare: 'Ten' } },
-          { book: { bookId: '2', author: { name: 'Test Author' }, title: 'Two', bookTitleBare: 'Two' } },
-          { book: { bookId: '1.5', author: { name: 'Test Author' }, title: 'One and a Half', bookTitleBare: 'One and a Half' } },
+          { book: { bookId: '10', author: { name: 'Gus T.T. Showbiz' }, title: 'Ten', bookTitleBare: 'Ten' } },
+          { book: { bookId: '2', author: { name: 'Gus T.T. Showbiz' }, title: 'Two', bookTitleBare: 'Two' } },
+          { book: { bookId: '1.5', author: { name: 'Gus T.T. Showbiz' }, title: 'One and a Half', bookTitleBare: 'One and a Half' } },
         ],
         seriesHeaders: ['Book 10', 'Book 2', 'Book 1.5'],
       });
@@ -447,9 +447,9 @@ describe('pure functions', () => {
       );
 
       expect(script.buildList(doc)).toBe([
-        'Test Author - Test 01.5 - One and a Half',
-        'Test Author - Test 02 - Two',
-        'Test Author - Test 10 - Ten',
+        'Gus T.T. Showbiz - Test 01.5 - One and a Half',
+        'Gus T.T. Showbiz - Test 02 - Two',
+        'Gus T.T. Showbiz - Test 10 - Ten',
       ].join('\n'));
     });
   });
@@ -524,8 +524,8 @@ describe('pure functions', () => {
     function multiAuthorDoc() {
       const props = JSON.stringify({
         series: [
-          { book: { bookId: 'a1', author: { name: 'Author One' }, title: 'Book One (#1)', bookTitleBare: 'Book One' } },
-          { book: { bookId: 'b2', author: { name: 'Author Two' }, title: 'Book Two (#2)', bookTitleBare: 'Book Two' } },
+          { book: { bookId: 'a1', author: { name: 'Squirts MacIntosh' }, title: 'Book One (#1)', bookTitleBare: 'Book One' } },
+          { book: { bookId: 'b2', author: { name: 'Weepy Boy Santos' }, title: 'Book Two (#2)', bookTitleBare: 'Book Two' } },
         ],
         seriesHeaders: ['Book 1', 'Book 2'],
       });
@@ -540,7 +540,7 @@ describe('pure functions', () => {
     function illegalCharsDoc() {
       const listProps = JSON.stringify({
         series: [
-          { book: { bookId: 'x', author: { name: 'Solo' }, title: 'T (#1)', bookTitleBare: 'T' } },
+          { book: { bookId: 'x', author: { name: 'Chocolate Columbo' }, title: 'T (#1)', bookTitleBare: 'T' } },
         ],
         seriesHeaders: ['Book 1'],
       });
@@ -555,12 +555,12 @@ describe('pure functions', () => {
     function inconsistentAuthorWhitespaceDoc() {
       const listProps = JSON.stringify({
         series: [
-          { book: { bookId: 'a1', author: { name: 'Mark  Dawson' }, title: 'One (#1)', bookTitleBare: 'One' } },
-          { book: { bookId: 'a2', author: { name: 'Mark Dawson' }, title: 'Two (#2)', bookTitleBare: 'Two' } },
+          { book: { bookId: 'a1', author: { name: 'Burt the  Billowy Bear' }, title: 'One (#1)', bookTitleBare: 'One' } },
+          { book: { bookId: 'a2', author: { name: 'Burt the Billowy Bear' }, title: 'Two (#2)', bookTitleBare: 'Two' } },
         ],
         seriesHeaders: ['Book 1', 'Book 2'],
       });
-      const headerProps = JSON.stringify({ title: 'Atticus Priest Series' });
+      const headerProps = JSON.stringify({ title: 'Magic Head Series' });
       const html =
         '<div data-react-class="ReactComponents.SeriesHeader" data-react-props="' + headerProps.replace(/"/g, '&quot;') + '"></div>' +
         '<div data-react-class="ReactComponents.SeriesList" data-react-props="' + listProps.replace(/"/g, '&quot;') + '"></div>';
@@ -571,15 +571,15 @@ describe('pure functions', () => {
       expect(script.buildFilename(multiAuthorDoc())).toBe('Various Authors - Shared Saga.txt');
     });
     test('illegal slash is replaced with a filename-safe separator', () => {
-      expect(script.buildFilename(illegalCharsDoc())).toBe('Solo - A – B.txt');
+      expect(script.buildFilename(illegalCharsDoc())).toBe('Chocolate Columbo - A – B.txt');
     });
     test('inconsistent author whitespace is normalized', () => {
       const doc = inconsistentAuthorWhitespaceDoc();
       expect(script.buildList(doc)).toBe([
-        'Mark Dawson - Atticus Priest 01 - One',
-        'Mark Dawson - Atticus Priest 02 - Two',
+        'Burt the Billowy Bear - Magic Head 01 - One',
+        'Burt the Billowy Bear - Magic Head 02 - Two',
       ].join('\n'));
-      expect(script.buildFilename(doc)).toBe('Mark Dawson - Atticus Priest.txt');
+      expect(script.buildFilename(doc)).toBe('Burt the Billowy Bear - Magic Head.txt');
     });
   });
 });
