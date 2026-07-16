@@ -18,10 +18,13 @@
 (function () {
   'use strict';
 
+  // Remove Goodreads' trailing " Series" label.
   var SERIES_SUFFIX = /\s+Series$/i;
   // Only Goodreads' aligned current-series header is trustworthy; titles can
   // begin with a number belonging to a different series.
+  // Match "Book N" or "Book N.M" and capture the number.
   var HEADER_RE = /^Book\s+(\d+(?:\.\d+)?)$/i;
+  // Remove a trailing "(Series Name #N)" marker.
   var TRAILING_SERIES_MARKER_RE = /\s+\([^()#]+#\d+(?:\.\d+)?\)$/;
   var PAD_WIDTH = 2;
 
@@ -37,23 +40,31 @@
 
   function sanitize(str) {
     var expectingOpeningQuote = true;
-    str = str.replace(/[‘’]/g, "'");
+
+    str = str.replace(/[‘’]/g, "'"); // Normalize curly apostrophes to ASCII.
+
+    // Convert ASCII double quotes to contextual curly quotes.
     str = str.replace(/"/g, function (_, index, input) {
       var previous = input[index - 1] || '';
       var next = input[index + 1] || '';
+      // An opener follows whitespace or an opening delimiter, then text.
       var opensByContext = (!previous || /[\s([{\-–—]/.test(previous)) && next && !/\s/.test(next);
+      // A closer follows text and precedes whitespace, punctuation, or the end.
       var closesByContext = previous && !/\s/.test(previous) && (!next || /[\s)\]},.!;:?\-–—]/.test(next));
       var opening = opensByContext || (!closesByContext && expectingOpeningQuote);
       expectingOpeningQuote = !opening;
       return opening ? '“' : '”';
     });
-    str = str.replace(/<([^<>]*)>/g, '[$1]').replace(/[<>]/g, '');
-    str = str.replace(/[\x00-\x1F\x7F]/g, ' ');
-    str = str.replace(/\s*:+(?:\s*:+)*\s*/g, ' – ');
-    str = str.replace(/\s*\|+\s*/g, ' – ');
-    str = str.replace(/\s*[\/\\]+\s*/g, ' – ');
-    str = str.replace(/[?*]/g, '');
-    return str.replace(/\s+/g, ' ').trim();
+
+    str = str.replace(/<([^<>]*)>/g, '[$1]'); // Convert paired angle brackets to square brackets.
+    str = str.replace(/[<>]/g, ''); // Remove any unmatched angle brackets.
+    str = str.replace(/[\x00-\x1F\x7F]/g, ' '); // Replace control characters with spaces.
+    str = str.replace(/\s*:+(?:\s*:+)*\s*/g, ' – '); // Replace one or more colon groups with an en dash.
+    str = str.replace(/\s*\|+\s*/g, ' – '); // Replace one or more pipes with an en dash.
+    str = str.replace(/\s*[\/\\]+\s*/g, ' – '); // Replace one or more slashes with an en dash.
+    str = str.replace(/[?*]/g, ''); // Remove filename-hostile question marks and asterisks.
+
+    return str.replace(/\s+/g, ' ').trim(); // Collapse repeated whitespace.
   }
 
   function getSeriesName(doc) {
@@ -98,6 +109,7 @@
         var id = book.bookId;
         if (id && seen.has(id)) return;
         if (id) seen.add(id);
+        // Collapse repeated whitespace in the author name.
         var author = book.author && book.author.name ? book.author.name.replace(/\s+/g, ' ').trim() : '';
         var titleRaw = book.title || '';
         var header = headers[i];
@@ -322,7 +334,7 @@
     tick();
   }
 
-  // --- Exports for Node testing (non-browser) ---
+  // --- Exports for testing (non-browser) ---
   // eslint-disable-next-line no-undef
   if (typeof document === 'undefined' && typeof module !== 'undefined' && module.exports) {
     // eslint-disable-next-line no-undef
